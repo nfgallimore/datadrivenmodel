@@ -1,0 +1,31 @@
+simulator:
+  states:
+    [
+      "K",
+      "C",
+      "Tin",
+      "Qhvac",
+      "occupancy",
+      "Phvac"
+  ]
+  actions: ["hvacON"]
+  configs:
+  # estimate these during training
+  # e.g.,:
+  # episode_inits: { "config_length": 0.5, "config_masspole": 0.1 }
+  episode_inits:
+  # e.g.,:  your simulator may need to know the initial state
+  # before the first episode. define these here as a dictionary
+  # you can include these in your Inkling scenarios during brain training
+  initial_states:
+    {
+      "K": 0.5,
+      "C": 0.3,
+      "Tin": 30,
+      "Qhvac": 9,
+      "occupancy": 1,
+      "Phvac": 9
+    }
+  policy: bonsai
+  logging: enable
+  workspace_setup: True
