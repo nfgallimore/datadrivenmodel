@@ -28,8 +28,8 @@ class GBoostModel(BaseModel):
         n_estimators: int = 100,
         learning_rate: float = 0.3,
         max_depth: int = 6,
+        num_leaves: int = 10,
     ):
-
         self.scale_data = scale_data
         if model_type == "xgboost":
             self.single_model = XGBRegressor(
@@ -39,7 +39,12 @@ class GBoostModel(BaseModel):
                 learning_rate=learning_rate,
             )
         elif model_type == "lightgbm":
-            self.single_model = LGBMRegressor()
+            self.single_model = LGBMRegressor(
+                max_depth=max_depth,
+                learning_rate=learning_rate,
+                n_estimators=n_estimators,
+                num_leaves=num_leaves,
+            )
         else:
             raise NotImplementedError("Unknown model selected")
 
@@ -56,23 +61,21 @@ class GBoostModel(BaseModel):
         self.model_type = model_type
         self.separate_models = fit_separate
 
-    def fit(self, X, y, fit_separate: bool = False):
-
+    def fit(self, X, y):
         if self.scale_data:
             X, y = self.scalar(X, y)
 
-        self.separate_models = fit_separate
-
         if self.separate_models:
+            logger.warn(f"Fitting {y.shape[1]} separate models for each output")
             self.models = []
             for i in range(y.shape[1]):
-
-                if self.model_type == "xgboost":
-                    boost_model = XGBRegressor()
-                elif self.model_type == "lightgbm":
-                    boost_model = LGBMRegressor()
-                else:
-                    raise ValueError("Unknown model type")
+                boost_model = self.single_model
+                # if self.model_type == "xgboost":
+                #     boost_model = XGBRegressor()
+                # elif self.model_type == "lightgbm":
+                #     boost_model = LGBMRegressor()
+                # else:
+                #     raise ValueError("Unknown model type")
 
                 logger.info(f"Fitting model {i+1} of {y.shape[1]}")
                 self.models.append(boost_model.fit(X, y[:, i]))
@@ -80,14 +83,12 @@ class GBoostModel(BaseModel):
             self.model.fit(X, y)
 
     def partial_fit(self, X, y):
-
         if not self.model:
             raise NotFittedError("No model found")
         else:
             self.model.partial_fit(X, y)
 
     def predict(self, X: np.ndarray):
-
         if len(X.shape) == 1:
             X = X.reshape(1, -1)
 
@@ -112,22 +113,21 @@ class GBoostModel(BaseModel):
         return preds
 
     def save_model(self, filename):
-
+        if not self.separate_models:
+            if not any([s in filename for s in [".pkl", ".pickle"]]):
+                filename += ".pkl"
+            parent_dir = pathlib.Path(filename).parent
+            if not parent_dir.exists():
+                parent_dir.mkdir(parents=True, exist_ok=True)
+            path_name = str(parent_dir)
+        else:
+            file_dir = pathlib.Path(filename)
+            if not file_dir.exists():
+                logger.info(f"Creating new directories at {file_dir}")
+                file_dir.mkdir(parents=True, exist_ok=True)
+            path_name = file_dir
         if self.scale_data:
             logger.info(f"Scale transformations used, saving to {filename}")
-            if not self.separate_models:
-                if not any([s in filename for s in [".pkl", ".pickle"]]):
-                    filename += ".pkl"
-                parent_dir = pathlib.Path(filename).parent
-                if not parent_dir.exists():
-                    parent_dir.mkdir(parents=True, exist_ok=True)
-                path_name = str(parent_dir)
-            else:
-                file_dir = pathlib.Path(filename)
-                if not file_dir.exists():
-                    logger.info(f"Creating new directories at {file_dir}")
-                    file_dir.mkdir(parents=True, exist_ok=True)
-                path_name = filename
             pickle.dump(
                 self.xscalar, open(os.path.join(path_name, "xscalar.pkl"), "wb")
             )
@@ -185,7 +185,6 @@ class GBoostModel(BaseModel):
 
 
 if __name__ == "__main__":
-
     xgm = GBoostModel()
     X, y = xgm.load_csv(
         dataset_path="csv_data/cartpole-log.csv",

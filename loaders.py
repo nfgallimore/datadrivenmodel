@@ -97,7 +97,9 @@ class CsvReader(object):
         if iteration_order < 0:
             labels_df = df[[episode_col, iteration_col] + self.label_cols]
         else:
-            labels_df = df[[episode_col, iteration_col]].join(lagged_df[self.label_cols])
+            labels_df = df[[episode_col, iteration_col]].join(
+                lagged_df[self.label_cols]
+            )
         return labels_df.join(features_df)[vars_to_keep]
 
     def read(
@@ -188,12 +190,14 @@ class CsvReader(object):
 
 
 if __name__ == "__main__":
-
     data_dir = "csv_data"
     logger.info(f"Using data saved in directory {data_dir}")
 
     csv_reader = CsvReader()
-    df = pd.read_csv(os.path.join(data_dir, "cartpole-log.csv"), nrows=1000)
+    # df = pd.read_csv(os.path.join(data_dir, "cartpole-log.csv"), nrows=1000)
+    df = pd.read_csv(
+        os.path.join(data_dir, "cartpole-mixed-brain-rand-term.csv"), nrows=1000
+    )
     df = csv_reader.read(df, iteration_order=-1)
-    df2 = pd.read_csv(os.path.join(data_dir, "cartpole_at_st.csv"), nrows=1000)
-    df2 = csv_reader.read(df2, iteration_order=1)
+    # df2 = pd.read_csv(os.path.join(data_dir, "cartpole_at_st.csv"), nrows=1000)
+    # df2 = csv_reader.read(df2, iteration_order=1)

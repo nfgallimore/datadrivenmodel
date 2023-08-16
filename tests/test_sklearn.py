@@ -3,22 +3,21 @@ import numpy as np
 import pathlib
 
 skmodel = SKModel()
-X, y = skmodel.load_csv(
-    dataset_path="csv_data/cartpole-log.csv",
+X, y, _, _ = skmodel.load_csv(
+    dataset_path="csv_data/cartpole_st1_at.csv",
     max_rows=1000,
     augm_cols=["action_command", "config_length", "config_masspole"],
+    test_perc=0.15,
 )
 
 
 def test_shape():
-
-    assert X.shape[0] == 980 == y.shape[0]
+    assert X.shape[0] == 833 == y.shape[0]
     assert X.shape[1] == skmodel.input_dim
     assert y.shape[1] == skmodel.output_dim
 
 
 def test_svm_train():
-
     if not pathlib.Path("tmp").exists():
         pathlib.Path("tmp").mkdir(parents=True, exist_ok=True)
     lsvm = SKModel()
@@ -36,7 +35,6 @@ def test_svm_train():
 
 
 def test_linear_train():
-
     if not pathlib.Path("tmp").exists():
         pathlib.Path("tmp").mkdir(parents=True, exist_ok=True)
     linear = SKModel()
@@ -54,7 +52,6 @@ def test_linear_train():
 
 
 def test_gbr_train():
-
     if not pathlib.Path("tmp").exists():
         pathlib.Path("tmp").mkdir(parents=True, exist_ok=True)
 

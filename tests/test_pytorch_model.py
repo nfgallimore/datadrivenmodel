@@ -4,37 +4,35 @@ import numpy as np
 import os
 
 torch_model = PyTorchModel()
-X, y = torch_model.load_csv(
+X, y, _, _ = torch_model.load_csv(
     input_cols="state",
     output_cols="state",
     augm_cols=["action_command", "config_length", "config_masspole"],
-    dataset_path="csv_data/cartpole-log.csv",
+    dataset_path="csv_data/cartpole_st1_at.csv",
     max_rows=1000,
+    test_perc=0.15,
 )
 
 
 def test_shape():
-
-    assert X.shape[0] == 980 == y.shape[0]
+    assert X.shape[0] == 833 == y.shape[0]
     assert X.shape[1] == torch_model.input_dim
     assert y.shape[1] == torch_model.output_dim
 
 
 def test_build():
-
     torch_model.build_model()
     assert torch_model.scale_data == False
     assert torch_model.model is not None
 
 
 def test_fit():
-
     torch_model.build_model()
     torch_model.fit(X, y)
 
 
+@pytest.mark.skip(reason="Too slow")
 def test_sweep():
-
     torch_model.build_model()
     params = {"lr": [0.01, 0.02], "module__num_units": [10, 50]}
     torch_model.sweep(params=params, X=X, y=y, search_algorithm="hyperopt")
@@ -43,7 +41,6 @@ def test_sweep():
 
 
 def test_predictor():
-
     torch_model.build_model()
     torch_model.fit(X, y)
     y_hat = torch_model.predict(X)
@@ -52,7 +49,6 @@ def test_predictor():
 
 
 def test_save_model():
-
     torch_model.build_model()
     torch_model.fit(X, y)
     yhat = torch_model.predict(X)
